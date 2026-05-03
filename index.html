@@ -1,94 +1,1487 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ff8ac2">
-    <meta name="application-name" content="RayOS">
-    <title>RayOS</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiaOS — Personal Web Operating System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #040407;
+    --bg2: #0a0a14;
+    --bg3: #0f0f1c;
+    --win-bg: rgba(8,8,18,0.94);
+    --border: rgba(0,230,180,0.14);
+    --cyan: #00e6b4;
+    --purple: #aa44ff;
+    --pink: #ff3dac;
+    --gold: #ffb627;
+    --red: #ff4444;
+    --green: #44ff88;
+    --text: #dde0f0;
+    --muted: #6a6a88;
+    --font-display: 'Orbitron', monospace;
+    --font-body: 'Rajdhani', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    user-select: none;
+    cursor: default;
+  }
+
+  /* ─── DESKTOP ─────────────────────────────── */
+  #desktop {
+    position: fixed;
+    inset: 0; bottom: 54px;
+    background:
+      radial-gradient(ellipse 60% 60% at 15% 55%, rgba(170,68,255,.07) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 85% 20%, rgba(0,230,180,.06) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 40% at 55% 85%, rgba(255,61,172,.05) 0%, transparent 60%),
+      var(--bg);
+    overflow: hidden;
+  }
+
+  #desktop::before {
+    content:'';
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(0,230,180,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,230,180,.025) 1px, transparent 1px);
+    background-size: 42px 42px;
+    pointer-events:none;
+  }
+
+  /* Scan-line shimmer */
+  #desktop::after {
+    content:'';
+    position:absolute; left:0; right:0; top:-5%;
+    height:3px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0,230,180,.35) 50%, transparent 100%);
+    animation: scan 12s linear infinite;
+    pointer-events:none;
+  }
+  @keyframes scan { to { top: 110%; } }
+
+  /* ─── DESKTOP ICONS ───────────────────────── */
+  #icons-area {
+    position:absolute;
+    top:16px; left:16px;
+    display:flex; flex-direction:column;
+    flex-wrap:wrap;
+    gap:6px;
+    max-height:calc(100% - 32px);
+    align-content:flex-start;
+  }
+
+  .desk-icon {
+    width:82px;
+    display:flex; flex-direction:column; align-items:center;
+    gap:6px; padding:10px 6px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:background .18s;
+    border: 1px solid transparent;
+  }
+  .desk-icon:hover { background: rgba(0,230,180,.07); border-color: rgba(0,230,180,.12); }
+  .desk-icon:active { transform: scale(.96); }
+  .desk-icon .dico { font-size:30px; filter:drop-shadow(0 0 6px rgba(0,230,180,.3)); }
+  .desk-icon .dlabel {
+    font-size:10.5px; font-weight:600;
+    color:var(--text);
+    text-align:center; line-height:1.25;
+    text-shadow: 0 1px 6px rgba(0,0,0,.9);
+    word-break:break-word;
+  }
+
+  /* ─── TASKBAR ─────────────────────────────── */
+  #taskbar {
+    position:fixed; bottom:0; left:0; right:0; height:54px;
+    background: rgba(6,6,14,.97);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(24px);
+    display:flex; align-items:center;
+    padding:0 12px; gap:8px;
+    z-index:9998;
+  }
+
+  #start-btn {
+    background: linear-gradient(135deg, rgba(0,230,180,.18), rgba(170,68,255,.18));
+    border: 1px solid rgba(0,230,180,.35);
+    border-radius:8px;
+    padding:6px 14px;
+    color:var(--cyan);
+    font-family:var(--font-display);
+    font-size:11px; font-weight:700;
+    letter-spacing:1.5px;
+    cursor:pointer;
+    transition:all .2s;
+    flex-shrink:0;
+  }
+  #start-btn:hover { box-shadow: 0 0 16px rgba(0,230,180,.25); background:linear-gradient(135deg,rgba(0,230,180,.28),rgba(170,68,255,.28)); }
+
+  #tb-sep { width:1px; height:28px; background:rgba(0,230,180,.12); flex-shrink:0; }
+
+  #tb-apps { display:flex; gap:6px; flex:1; overflow:hidden; }
+
+  .tb-btn {
+    display:flex; align-items:center; gap:6px;
+    padding:4px 11px;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:11.5px; font-weight:600;
+    color:var(--muted);
+    font-family:var(--font-body);
+    border:1px solid transparent;
+    transition:all .18s;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .tb-btn.active {
+    background:rgba(0,230,180,.1);
+    border-color:rgba(0,230,180,.22);
+    color:var(--cyan);
+  }
+  .tb-btn:not(.active):hover { background:rgba(255,255,255,.04); color:var(--text); }
+
+  #sys-tray {
+    margin-left:auto; display:flex; align-items:center; gap:10px;
+    flex-shrink:0;
+  }
+
+  #sys-clock {
+    font-family:var(--font-display);
+    font-size:12px; color:var(--cyan);
+    padding:4px 10px;
+    background:rgba(0,230,180,.06);
+    border:1px solid rgba(0,230,180,.14);
+    border-radius:6px;
+    letter-spacing:.5px;
+  }
+
+  /* ─── START MENU ─────────────────────────── */
+  #start-menu {
+    position:fixed; bottom:62px; left:10px;
+    width:310px;
+    background:rgba(7,7,17,.97);
+    border:1px solid rgba(0,230,180,.18);
+    border-radius:14px;
+    padding:18px;
+    z-index:9997;
+    backdrop-filter:blur(30px);
+    box-shadow:0 -20px 70px rgba(0,0,0,.85);
+    display:none; flex-direction:column; gap:6px;
+    animation: menuIn .2s ease;
+  }
+  #start-menu.open { display:flex; }
+  @keyframes menuIn { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:none; } }
+
+  .sm-brand {
+    font-family:var(--font-display);
+    font-size:20px; font-weight:900;
+    color:var(--cyan);
+    text-shadow:0 0 20px rgba(0,230,180,.5);
+    letter-spacing:4px;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:4px;
+  }
+  .sm-brand em { color:var(--purple); font-style:normal; }
+
+  .sm-item {
+    display:flex; align-items:center; gap:12px;
+    padding:9px 10px;
+    border-radius:9px;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:all .18s;
+  }
+  .sm-item:hover { background:rgba(0,230,180,.06); border-color:rgba(0,230,180,.12); }
+  .sm-icon { font-size:22px; flex-shrink:0; }
+  .sm-name { font-size:13.5px; font-weight:600; color:var(--text); }
+  .sm-desc { font-size:10.5px; color:var(--muted); margin-top:1px; }
+
+  .sm-footer {
+    border-top:1px solid var(--border);
+    padding-top:10px; margin-top:4px;
+    text-align:center; font-size:10.5px; color:var(--muted);
+  }
+
+  /* ─── WINDOWS ────────────────────────────── */
+  #wins { position:fixed; inset:0; bottom:54px; pointer-events:none; }
+
+  .win {
+    position:absolute;
+    background:var(--win-bg);
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:
+      0 30px 90px rgba(0,0,0,.75),
+      0 0 0 1px rgba(0,230,180,.04),
+      inset 0 1px 0 rgba(255,255,255,.04);
+    backdrop-filter:blur(32px);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    pointer-events:all;
+    min-width:260px; min-height:180px;
+    transition: opacity .18s, transform .18s;
+  }
+  .win.hiding { opacity:0; transform:scale(.95); }
+  .win.maximized { top:0!important; left:0!important; width:100%!important; height:100%!important; border-radius:0!important; }
+
+  .win-bar {
+    height:38px;
+    display:flex; align-items:center;
+    padding:0 12px;
+    background:rgba(255,255,255,.025);
+    border-bottom:1px solid var(--border);
+    cursor:move;
+    flex-shrink:0;
+    gap:10px;
+  }
+
+  .win-dots { display:flex; gap:6px; flex-shrink:0; }
+  .wd {
+    width:12px; height:12px; border-radius:50%;
+    border:none; cursor:pointer;
+    transition:opacity .15s, transform .15s;
+  }
+  .wd:hover { opacity:.75; transform:scale(1.15); }
+  .wd.close  { background:#ff5f57; }
+  .wd.mini   { background:#febc2e; }
+  .wd.maxi   { background:#28c840; }
+
+  .win-title {
+    flex:1; text-align:center;
+    font-family:var(--font-display);
+    font-size:10.5px; color:var(--muted);
+    letter-spacing:1.2px;
+    pointer-events:none;
+  }
+  .win-title-spacer { width:54px; flex-shrink:0; }
+
+  .win-body { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+
+  /* ─── SCROLLBAR ──────────────────────────── */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:rgba(0,230,180,.18); border-radius:2px; }
+  ::-webkit-scrollbar-thumb:hover { background:rgba(0,230,180,.35); }
+
+  /* ─── SHARED APP ELEMENTS ────────────────── */
+  .app-head {
+    padding:14px 18px 10px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .app-title { font-family:var(--font-display); font-size:12px; color:var(--cyan); letter-spacing:2px; }
+  .app-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+
+  .n-btn {
+    background:linear-gradient(135deg,rgba(0,230,180,.15),rgba(170,68,255,.15));
+    border:1px solid rgba(0,230,180,.4);
+    border-radius:7px;
+    padding:8px 18px;
+    color:var(--cyan);
+    font-family:var(--font-display);
+    font-size:10.5px; font-weight:700;
+    letter-spacing:1px;
+    cursor:pointer;
+    transition:all .18s;
+  }
+  .n-btn:hover { background:linear-gradient(135deg,rgba(0,230,180,.25),rgba(170,68,255,.25)); box-shadow:0 0 18px rgba(0,230,180,.18); }
+
+  .empty-state {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    height:100%; gap:10px; color:var(--muted); font-size:12px; padding:20px;
+    text-align:center;
+  }
+  .empty-icon { font-size:44px; opacity:.25; }
+
+  select option { background:#0f0f1c; color:var(--text); }
+
+  /* ─── TODO APP ───────────────────────────── */
+  .todo-wrap { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+
+  .todo-inp-row {
+    display:flex; gap:8px;
+    padding:14px 16px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+
+  .t-inp {
+    flex:1;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(0,230,180,.2);
+    border-radius:8px;
+    padding:9px 13px;
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:13.5px;
+    outline:none;
+    transition:border-color .18s, box-shadow .18s;
+  }
+  .t-inp:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,230,180,.1); }
+  .t-inp::placeholder { color:var(--muted); }
+
+  .t-sel {
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(0,230,180,.2);
+    border-radius:8px;
+    padding:9px 8px;
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:12px;
+    outline:none; cursor:pointer;
+  }
+
+  .t-add {
+    background:linear-gradient(135deg,rgba(0,230,180,.2),rgba(170,68,255,.2));
+    border:1px solid rgba(0,230,180,.4);
+    border-radius:8px;
+    padding:9px 16px;
+    color:var(--cyan);
+    font-family:var(--font-display);
+    font-size:10px; font-weight:700;
+    cursor:pointer; transition:all .18s; flex-shrink:0;
+    letter-spacing:.5px;
+  }
+  .t-add:hover { box-shadow:0 0 14px rgba(0,230,180,.2); }
+
+  .todo-filters {
+    display:flex; align-items:center; gap:6px;
+    padding:8px 16px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+
+  .f-btn {
+    padding:3px 11px;
+    border-radius:20px;
+    border:1px solid rgba(0,230,180,.14);
+    background:transparent;
+    color:var(--muted);
+    font-family:var(--font-body);
+    font-size:11.5px; font-weight:600;
+    cursor:pointer; transition:all .18s;
+  }
+  .f-btn.on { background:rgba(0,230,180,.15); border-color:var(--cyan); color:var(--cyan); }
+  .f-btn:not(.on):hover { background:rgba(255,255,255,.04); color:var(--text); }
+
+  .t-count { margin-left:auto; font-size:10.5px; color:var(--muted); }
+
+  .todo-list {
+    flex:1; overflow-y:auto;
+    display:flex; flex-direction:column; gap:7px;
+    padding:12px 16px;
+  }
+
+  .t-item {
+    display:flex; align-items:center; gap:10px;
+    padding:11px 13px;
+    background:rgba(255,255,255,.025);
+    border:1px solid rgba(255,255,255,.055);
+    border-radius:9px;
+    transition:all .2s;
+    animation:sli .25s ease;
+  }
+  @keyframes sli { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+  .t-item:hover { background:rgba(255,255,255,.04); border-color:rgba(0,230,180,.1); }
+  .t-item.done { opacity:.45; }
+
+  .t-check {
+    width:18px; height:18px; border-radius:50%;
+    border:2px solid rgba(0,230,180,.4);
+    flex-shrink:0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .18s;
+  }
+  .t-check.on { background:var(--cyan); border-color:var(--cyan); box-shadow:0 0 10px rgba(0,230,180,.4); }
+  .t-check svg { display:none; }
+  .t-check.on svg { display:block; }
+
+  .t-txt { flex:1; font-size:13.5px; font-weight:500; color:var(--text); }
+  .t-item.done .t-txt { text-decoration:line-through; color:var(--muted); }
+
+  .p-badge {
+    padding:2px 7px; border-radius:4px;
+    font-size:9.5px; font-family:var(--font-display); font-weight:700;
+    flex-shrink:0;
+  }
+  .p-high   { background:rgba(255,68,68,.2); color:var(--red); border:1px solid rgba(255,68,68,.3); }
+  .p-medium { background:rgba(255,182,39,.2); color:var(--gold); border:1px solid rgba(255,182,39,.3); }
+  .p-low    { background:rgba(0,230,180,.2); color:var(--cyan); border:1px solid rgba(0,230,180,.3); }
+
+  .t-del {
+    background:none; border:none;
+    color:rgba(255,68,68,.4);
+    cursor:pointer; font-size:13px;
+    transition:color .15s; padding:2px;
+  }
+  .t-del:hover { color:var(--red); }
+
+  /* ─── NOTES APP ──────────────────────────── */
+  .notes-layout { display:flex; height:100%; overflow:hidden; }
+
+  .notes-sidebar {
+    width:185px; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; flex-shrink:0;
+    overflow:hidden;
+  }
+  .ns-head { padding:12px 14px 10px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .ns-list { flex:1; overflow-y:auto; }
+
+  .subj-item {
+    display:flex; align-items:center; gap:8px;
+    padding:9px 14px; cursor:pointer;
+    font-size:12.5px; color:var(--muted);
+    transition:all .18s;
+    border-left:2px solid transparent;
+  }
+  .subj-item:hover { background:rgba(0,230,180,.05); color:var(--text); }
+  .subj-item.on { background:rgba(0,230,180,.07); color:var(--cyan); border-left-color:var(--cyan); }
+
+  .s-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  .notes-mid {
+    width:200px; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; flex-shrink:0;
+    overflow:hidden;
+  }
+  .nm-head {
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    flex-shrink:0;
+  }
+  .nm-title { font-size:12.5px; font-weight:700; color:var(--text); }
+  .nm-new {
+    background:rgba(0,230,180,.15);
+    border:1px solid rgba(0,230,180,.3);
+    border-radius:5px; color:var(--cyan);
+    padding:2px 9px; cursor:pointer;
+    font-family:var(--font-display); font-size:12px;
+    transition:all .18s;
+  }
+  .nm-new:hover { background:rgba(0,230,180,.25); }
+
+  .nm-list { flex:1; overflow-y:auto; }
+
+  .note-row {
+    padding:11px 14px; cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,.04);
+    transition:background .15s;
+  }
+  .note-row:hover { background:rgba(255,255,255,.04); }
+  .note-row.on { background:rgba(0,230,180,.06); }
+  .nr-title { font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nr-prev { font-size:10.5px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .notes-editor { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .ne-toolbar {
+    display:flex; gap:6px; justify-content:flex-end;
+    padding:7px 12px; border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .ne-tb-btn {
+    background:transparent; border:1px solid rgba(255,255,255,.08);
+    border-radius:5px; color:var(--muted);
+    padding:3px 10px; cursor:pointer;
+    font-size:10.5px; font-family:var(--font-display);
+    transition:all .15s;
+  }
+  .ne-tb-btn:hover { background:rgba(255,255,255,.06); color:var(--text); }
+  .ne-save { border-color:rgba(0,230,180,.25); color:var(--cyan); }
+  .ne-save:hover { background:rgba(0,230,180,.1)!important; }
+  .ne-del { border-color:rgba(255,68,68,.2); color:var(--red); }
+  .ne-del:hover { background:rgba(255,68,68,.08)!important; }
+
+  .note-title-inp {
+    background:none; border:none;
+    border-bottom:1px solid var(--border);
+    padding:14px 18px;
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:18px; font-weight:700;
+    outline:none; width:100%;
+  }
+  .note-title-inp::placeholder { color:var(--muted); font-weight:400; }
+  .note-title-inp:disabled { opacity:.4; cursor:default; }
+
+  .note-body-inp {
+    flex:1; background:none; border:none;
+    padding:14px 18px;
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:13.5px; line-height:1.75;
+    outline:none; resize:none; width:100%;
+  }
+  .note-body-inp::placeholder { color:var(--muted); }
+  .note-body-inp:disabled { opacity:.4; cursor:default; }
+
+  /* ─── CALCULATOR ─────────────────────────── */
+  .calc-wrap {
+    display:flex; flex-direction:column;
+    padding:14px; gap:10px; height:100%;
+  }
+
+  .calc-display {
+    background:rgba(0,0,0,.5);
+    border:1px solid rgba(0,230,180,.14);
+    border-radius:10px; padding:14px 16px;
+    text-align:right;
+  }
+  .c-expr {
+    font-family:var(--font-mono);
+    font-size:11.5px; color:var(--muted);
+    min-height:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .c-res {
+    font-family:var(--font-display);
+    font-size:32px; font-weight:700;
+    color:var(--cyan);
+    text-shadow:0 0 18px rgba(0,230,180,.4);
+    margin-top:4px; line-height:1;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  .calc-grid {
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:7px; flex:1;
+  }
+
+  .c-btn {
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:9px;
+    color:var(--text);
+    font-family:var(--font-display); font-size:13px;
+    cursor:pointer; transition:all .13s;
+    display:flex; align-items:center; justify-content:center;
+    min-height:46px;
+  }
+  .c-btn:hover { background:rgba(0,230,180,.1); border-color:rgba(0,230,180,.28); }
+  .c-btn:active { transform:scale(.93); background:rgba(0,230,180,.18); }
+  .c-btn.op { background:rgba(170,68,255,.14); border-color:rgba(170,68,255,.28); color:var(--purple); }
+  .c-btn.eq { background:linear-gradient(135deg,rgba(0,230,180,.22),rgba(170,68,255,.22)); border-color:rgba(0,230,180,.5); color:var(--cyan); }
+  .c-btn.cl { background:rgba(255,68,68,.14); border-color:rgba(255,68,68,.28); color:var(--red); }
+  .c-btn.zero { grid-column:span 2; }
+
+  .c-hist {
+    font-family:var(--font-mono);
+    font-size:10px; color:var(--muted);
+    max-height:52px; overflow-y:auto;
+    padding:6px 10px;
+    background:rgba(0,0,0,.3);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:7px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+
+  /* ─── SNAKE ──────────────────────────────── */
+  .snake-wrap {
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:10px; padding:12px; height:100%;
+  }
+  .snake-header {
+    display:flex; justify-content:space-between; align-items:center;
+    width:100%; padding:0 4px;
+  }
+  #snakeCanvas {
+    border:1px solid rgba(0,230,180,.25);
+    border-radius:6px;
+    box-shadow:0 0 28px rgba(0,230,180,.08);
+    display:block;
+  }
+  .snake-score { font-family:var(--font-display); color:var(--cyan); font-size:15px; }
+  .g-ctrl {
+    display:grid;
+    grid-template-columns:repeat(3,38px);
+    grid-template-rows:repeat(3,38px);
+    gap:5px;
+  }
+  .ctrl {
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(0,230,180,.18);
+    border-radius:7px; color:var(--cyan);
+    font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .13s; user-select:none;
+  }
+  .ctrl:hover { background:rgba(0,230,180,.1); }
+  .ctrl:active { transform:scale(.9); }
+
+  /* ─── CLOCK & CALENDAR ───────────────────── */
+  .clock-wrap { padding:16px; height:100%; overflow-y:auto; display:flex; flex-direction:column; gap:14px; }
+
+  .big-clock-box {
+    text-align:center;
+    padding:20px;
+    background:rgba(0,0,0,.4);
+    border:1px solid rgba(0,230,180,.14);
+    border-radius:12px;
+  }
+  .big-time {
+    font-family:var(--font-display);
+    font-size:38px; font-weight:700;
+    color:var(--cyan);
+    text-shadow:0 0 24px rgba(0,230,180,.45);
+    letter-spacing:4px;
+  }
+  .big-date { font-size:12.5px; color:var(--muted); margin-top:6px; }
+  .big-day { font-size:11px; color:var(--purple); margin-top:3px; font-family:var(--font-display); letter-spacing:2px; }
+
+  .cal-box { flex:1; }
+  .cal-nav-row {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:12px;
+  }
+  .cal-month-lbl { font-family:var(--font-display); font-size:12px; color:var(--cyan); letter-spacing:1px; }
+  .cal-arr {
+    background:none; border:1px solid rgba(0,230,180,.18);
+    border-radius:5px; color:var(--cyan);
+    padding:3px 10px; cursor:pointer; transition:all .15s;
+  }
+  .cal-arr:hover { background:rgba(0,230,180,.1); }
+
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .cal-dn {
+    text-align:center; font-size:9.5px;
+    font-family:var(--font-display); color:var(--muted);
+    padding:3px;
+  }
+  .cal-d {
+    text-align:center; padding:5px 3px;
+    border-radius:6px; font-size:12px;
+    cursor:pointer; color:var(--muted);
+    transition:all .15s;
+  }
+  .cal-d:hover { background:rgba(0,230,180,.08); color:var(--text); }
+  .cal-d.today { background:rgba(0,230,180,.18); color:var(--cyan); font-weight:700; box-shadow:0 0 10px rgba(0,230,180,.2); }
+  .cal-d.other { opacity:.28; }
+
+  /* ─── WELCOME ────────────────────────────── */
+  .wel-wrap {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:28px 24px; gap:18px; height:100%;
+  }
+  .wel-avatar {
+    width:80px; height:80px; border-radius:50%;
+    background:linear-gradient(135deg,var(--cyan),var(--purple));
+    display:flex; align-items:center; justify-content:center;
+    font-size:38px;
+    box-shadow:0 0 40px rgba(0,230,180,.28);
+    animation:glowpulse 3s ease-in-out infinite;
+  }
+  @keyframes glowpulse {
+    0%,100% { box-shadow:0 0 20px rgba(0,230,180,.28); }
+    50% { box-shadow:0 0 50px rgba(0,230,180,.5); }
+  }
+  .wel-name {
+    font-family:var(--font-display);
+    font-size:24px; font-weight:900;
+    color:var(--cyan);
+    text-shadow:0 0 20px rgba(0,230,180,.4);
+    text-align:center;
+  }
+  .wel-sub { font-size:12.5px; color:var(--muted); text-align:center; }
+  .wel-tip {
+    background:rgba(170,68,255,.07);
+    border:1px solid rgba(170,68,255,.2);
+    border-radius:10px;
+    padding:14px 18px; max-width:290px;
+    text-align:center;
+  }
+  .wel-tip-label { font-size:10px; color:var(--purple); font-family:var(--font-display); letter-spacing:1.5px; margin-bottom:7px; }
+  .wel-tip-text { font-size:13px; color:var(--text); line-height:1.6; }
+  .wel-btns { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+
+  /* ─── BADGE ──────────────────────────────── */
+  .badge {
+    min-width:16px; height:16px;
+    border-radius:8px; padding:0 4px;
+    font-size:9.5px; font-family:var(--font-display); font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--cyan); color:#000;
+    margin-left:auto;
+  }
+
+  /* ─── MEDIA ──────────────────────────────── */
+  @media (max-width:700px) {
+    .notes-sidebar { width:140px; }
+    .notes-mid { width:160px; }
+  }
+</style>
 </head>
 <body>
-    <!-- Desktop container for the full RayOS web experience -->
-    <div id="desktop">
-        <header class="topbar">
-            <div class="brand">RayOS</div>
-            
-            <div id="clock" class="clock">Loading...</div>
-        </header>
 
-        <!-- App icons on the desktop - each button opens a separate window -->
-        <main class="desktop-grid">
-            <button class="app-card" id="wallpaper-changer">🎨 Wallpaper</button>
-        </main>
+<!-- ── DESKTOP ─────────────────────────────────── -->
+<div id="desktop">
+  <div id="icons-area"></div>
+</div>
 
-        <!-- Dock at the bottom for quick access -->
-        <footer class="dock">
-            <button id="install-app" class="dock-item hidden">📌 Pin to taskbar</button>
-            <p id="install-message" class="install-message">Install RayOS to pin it to your taskbar.</p>
-        </footer>
+<!-- ── TASKBAR ─────────────────────────────────── -->
+<div id="taskbar">
+  <button id="start-btn" onclick="toggleStart()">⚡ RIA<em style="color:var(--purple)">OS</em></button>
+  <div id="tb-sep"></div>
+  <div id="tb-apps"></div>
+  <div id="sys-tray">
+    <div id="sys-clock"></div>
+  </div>
+</div>
+
+<!-- ── START MENU ───────────────────────────────── -->
+<div id="start-menu">
+  <div class="sm-brand">RIA<em>OS</em></div>
+  <div id="sm-apps"></div>
+  <div class="sm-footer">Made with 💜 for Ria • 12th Grade • 2025</div>
+</div>
+
+<!-- ── WINDOWS HOST ─────────────────────────────── -->
+<div id="wins"></div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════
+   WINDOW MANAGER
+═══════════════════════════════════════════════════════ */
+let zTop = 200;
+const WM = {}; // id → { el, minimized, maximized, prevStyle }
+const TBBtns = {};
+let focusedId = null;
+
+function openWin(id, title, w, h, html) {
+  if (WM[id]) { restoreWin(id); bringFront(id); return; }
+
+  const cx = window.innerWidth, cy = window.innerHeight - 54;
+  const x = Math.min(Math.max(40, (cx - w) / 2 + (Object.keys(WM).length * 28) % 140), cx - w - 10);
+  const y = Math.min(Math.max(0,  (cy - h) / 2 + (Object.keys(WM).length * 22) % 100), cy - h - 10);
+
+  const el = document.createElement('div');
+  el.className = 'win';
+  el.id = 'W_' + id;
+  el.style.cssText = `width:${w}px;height:${h}px;left:${x}px;top:${y}px;z-index:${++zTop}`;
+  el.innerHTML = `
+    <div class="win-bar" id="bar_${id}">
+      <div class="win-dots">
+        <button class="wd close" title="Close"    onclick="closeWin('${id}')"></button>
+        <button class="wd mini"  title="Minimise" onclick="miniWin('${id}')"></button>
+        <button class="wd maxi"  title="Maximise" onclick="maxiWin('${id}')"></button>
+      </div>
+      <div class="win-title">${title}</div>
+      <div class="win-title-spacer"></div>
     </div>
+    <div class="win-body" id="body_${id}">${html}</div>`;
 
-    <script src="script.js"></script>
-</body>
-</html>
+  document.getElementById('wins').appendChild(el);
+  WM[id] = { el, minimized: false, maximized: false, prevStyle: '' };
+  makeDraggable(el, document.getElementById('bar_' + id), id);
+  el.addEventListener('mousedown', () => bringFront(id));
+  addTBBtn(id, title);
+  bringFront(id);
+}
 
-    <section class="app-window" id="snake-window" data-app-window="snake">
-        <header class="window-header">
-            <span>Snake Game</span>
-            <div class="window-controls">
-                <button class="minimize-window">_</button>
-                <button class="maximize-window">□</button>
-                <button class="close-window">×</button>
-            </div>
-        </header>
-        <div class="window-body snake-body">
-            <p class="window-help">Use arrow keys to move the snake. Press Start to play.</p>
-            <div class="tool-row">
-                <button id="start-snake">Start</button>
-                <button id="stop-snake">Stop</button>
-                <span class="score-label">Score: <span id="snake-score">0</span></span>
-            </div>
-            <canvas id="snake-canvas" width="360" height="360"></canvas>
+function closeWin(id) {
+  const { el } = WM[id] || {};
+  if (!el) return;
+  el.classList.add('hiding');
+  setTimeout(() => {
+    el.remove();
+    delete WM[id];
+    removeTBBtn(id);
+    if (id === 'snake')  clearInterval(_snakeTimer);
+    if (id === 'clock')  clearInterval(_clockTimer);
+  }, 180);
+}
+
+function miniWin(id) {
+  const w = WM[id];
+  if (!w || w.minimized) return;
+  w.el.style.display = 'none';
+  w.minimized = true;
+  TBBtns[id]?.classList.remove('active');
+}
+
+function restoreWin(id) {
+  const w = WM[id];
+  if (!w || !w.minimized) return;
+  w.el.style.display = 'flex';
+  w.minimized = false;
+}
+
+function maxiWin(id) {
+  const w = WM[id];
+  if (!w) return;
+  if (w.maximized) {
+    w.el.classList.remove('maximized');
+    w.el.style.cssText = w.prevStyle + ';z-index:' + w.el.style.zIndex;
+    w.maximized = false;
+  } else {
+    w.prevStyle = `width:${w.el.style.width};height:${w.el.style.height};left:${w.el.style.left};top:${w.el.style.top}`;
+    w.el.classList.add('maximized');
+    w.maximized = true;
+  }
+}
+
+function bringFront(id) {
+  const w = WM[id];
+  if (!w) return;
+  w.el.style.zIndex = ++zTop;
+  focusedId = id;
+  Object.values(TBBtns).forEach(b => b.classList.remove('active'));
+  TBBtns[id]?.classList.add('active');
+}
+
+function makeDraggable(el, bar, id) {
+  let ox=0, oy=0, mx=0, my=0, dragging=false;
+  bar.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('wd')) return;
+    e.preventDefault();
+    dragging=true; mx=e.clientX; my=e.clientY;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  function onMove(e) {
+    if (!dragging || WM[id]?.maximized) return;
+    const dx=e.clientX-mx, dy=e.clientY-my; mx=e.clientX; my=e.clientY;
+    el.style.left = Math.max(0, el.offsetLeft+dx)+'px';
+    el.style.top  = Math.max(0, el.offsetTop+dy)+'px';
+  }
+  function onUp() { dragging=false; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+}
+
+function addTBBtn(id, title) {
+  const btn = document.createElement('button');
+  const short = title.split('—')[0].trim().replace(/— RiaOS/,'');
+  btn.className = 'tb-btn active';
+  btn.id = 'tb_' + id;
+  btn.innerHTML = `<span>${APPS[id]?.icon || '📱'}</span> ${short}`;
+  btn.onclick = () => {
+    if (WM[id]?.minimized) { restoreWin(id); bringFront(id); }
+    else if (focusedId===id) { miniWin(id); }
+    else { bringFront(id); }
+  };
+  document.getElementById('tb-apps').appendChild(btn);
+  TBBtns[id] = btn;
+}
+function removeTBBtn(id) { TBBtns[id]?.remove(); delete TBBtns[id]; }
+
+/* ═══════════════════════════════════════════════════════
+   APP REGISTRY
+═══════════════════════════════════════════════════════ */
+const APPS = {
+  welcome: { icon:'👩‍🎓', label:'Welcome',       desc:'Your personal start page',    w:370, h:530 },
+  todo:    { icon:'✅', label:'Task Manager',   desc:'To-do list with priorities',   w:430, h:580 },
+  notes:   { icon:'📓', label:'Study Notes',   desc:'Subject-wise notes for 12th',  w:720, h:530 },
+  calc:    { icon:'🧮', label:'Calculator',     desc:'Full-featured calculator',      w:285, h:460 },
+  snake:   { icon:'🐍', label:'Snake Game',     desc:'Classic neon snake game',       w:390, h:580 },
+  clock:   { icon:'🕐', label:'Clock & Calendar', desc:'Time, date and calendar',   w:340, h:530 },
+};
+
+function launchApp(id) {
+  closeStart();
+  const app = APPS[id];
+  if (!app) return;
+  let html = '';
+  if (id==='welcome') html = htmlWelcome();
+  if (id==='todo')    html = htmlTodo();
+  if (id==='notes')   html = htmlNotes();
+  if (id==='calc')    html = htmlCalc();
+  if (id==='snake')   html = htmlSnake();
+  if (id==='clock')   html = htmlClock();
+  openWin(id, `${app.label} — RiaOS`, app.w, app.h, html);
+  setTimeout(() => initApp(id), 60);
+}
+
+function initApp(id) {
+  if (id==='todo')  renderTodos();
+  if (id==='notes') { renderSubjects(); renderNotesList(); renderEditor(); }
+  if (id==='calc')  updateDisplay();
+  if (id==='snake') initSnake();
+  if (id==='clock') { updateClock(); renderCal(); _clockTimer = setInterval(updateClock, 1000); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   DESKTOP ICONS + START MENU
+═══════════════════════════════════════════════════════ */
+function setupDesktop() {
+  const ia = document.getElementById('icons-area');
+  ia.innerHTML = Object.entries(APPS).map(([id,a]) => `
+    <div class="desk-icon" ondblclick="launchApp('${id}')" title="Double-click to open">
+      <span class="dico">${a.icon}</span>
+      <span class="dlabel">${a.label}</span>
+    </div>`).join('');
+}
+
+function setupStartMenu() {
+  document.getElementById('sm-apps').innerHTML = Object.entries(APPS).map(([id,a]) => `
+    <div class="sm-item" onclick="launchApp('${id}')">
+      <span class="sm-icon">${a.icon}</span>
+      <div>
+        <div class="sm-name">${a.label}</div>
+        <div class="sm-desc">${a.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+let _startOpen = false;
+function toggleStart() { _startOpen ? closeStart() : openStart(); }
+function openStart() {
+  _startOpen = true;
+  document.getElementById('start-menu').classList.add('open');
+}
+function closeStart() {
+  _startOpen = false;
+  document.getElementById('start-menu').classList.remove('open');
+}
+document.addEventListener('mousedown', e => {
+  const sm = document.getElementById('start-menu');
+  const sb = document.getElementById('start-btn');
+  if (_startOpen && !sm.contains(e.target) && !sb.contains(e.target)) closeStart();
+});
+
+/* ═══════════════════════════════════════════════════════
+   SYSTEM CLOCK
+═══════════════════════════════════════════════════════ */
+function tickSysClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('sys-clock').textContent = `${hh}:${mm}`;
+}
+tickSysClock();
+setInterval(tickSysClock, 10000);
+
+/* ═══════════════════════════════════════════════════════
+   TODO APP
+═══════════════════════════════════════════════════════ */
+let _todos = JSON.parse(localStorage.getItem('ria_todos') || '[]');
+let _todoFilter = 'all';
+function saveTodos() { localStorage.setItem('ria_todos', JSON.stringify(_todos)); }
+
+function htmlTodo() { return `
+<div class="app-head">
+  <div class="app-title">TASK MANAGER</div>
+  <div class="app-sub">Stay on track, Ria! 💫</div>
+</div>
+<div class="todo-wrap">
+  <div class="todo-inp-row">
+    <input class="t-inp" id="t-inp" placeholder="Add a new task..." onkeydown="if(event.key==='Enter')addTodo()">
+    <select class="t-sel" id="t-pri">
+      <option value="high">🔴 High</option>
+      <option value="medium" selected>🟡 Med</option>
+      <option value="low">🟢 Low</option>
+    </select>
+    <button class="t-add" onclick="addTodo()">ADD</button>
+  </div>
+  <div class="todo-filters">
+    <button class="f-btn on" id="fb-all"       onclick="setFilter('all')">All</button>
+    <button class="f-btn"    id="fb-active"    onclick="setFilter('active')">Active</button>
+    <button class="f-btn"    id="fb-completed" onclick="setFilter('completed')">Done</button>
+    <span class="t-count" id="t-count"></span>
+  </div>
+  <div class="todo-list" id="todo-list"></div>
+</div>`; }
+
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  if (!list) return;
+  const items = _todos.filter(t =>
+    _todoFilter==='active' ? !t.done :
+    _todoFilter==='completed' ? t.done : true);
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div>No tasks here!</div><div style="font-size:11px;margin-top:4px">All clear 🎉</div></div>`;
+  } else {
+    list.innerHTML = items.map(t => `
+      <div class="t-item ${t.done?'done':''}" id="ti_${t.id}">
+        <div class="t-check ${t.done?'on':''}" onclick="toggleTodo('${t.id}')">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4L3.5 7L9 1" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-    </section>
+        <span class="t-txt">${escHtml(t.text)}</span>
+        <span class="p-badge p-${t.priority}">${t.priority.toUpperCase()}</span>
+        <button class="t-del" onclick="delTodo('${t.id}')">✕</button>
+      </div>`).join('');
+  }
 
-    <!-- Calculator window with number keys and operations -->
-    <section class="app-window" id="calc-window" data-app-window="calc">
-        <header class="window-header">
-            <span>Calculator</span>
-            <div class="window-controls">
-                <button class="minimize-window">_</button>
-                <button class="maximize-window">□</button>
-                <button class="close-window">×</button>
-            </div>
-        </header>
-        <div class="window-body calc-body">
-            <input id="calc-display" type="text" readonly value="0" />
-            <div class="calc-grid">
-                <button data-value="7">7</button>
-                <button data-value="8">8</button>
-                <button data-value="9">9</button>
-                <button data-value="/">÷</button>
-                <button data-value="4">4</button>
-                <button data-value="5">5</button>
-                <button data-value="6">6</button>
-                <button data-value="*">×</button>
-                <button data-value="1">1</button>
-                <button data-value="2">2</button>
-                <button data-value="3">3</button>
-                <button data-value="-">−</button>
-                <button data-value="0">0</button>
-                <button data-value=".">.</button>
-                <button data-value="=">=</button>
-                <button data-value="+">+</button>
-                <button class="wide-button" data-value="C">C</button>
-                <button class="wide-button" data-value="DEL">DEL</button>
-            </div>
-        </div>
-    </section>
+  ['all','active','completed'].forEach(f => {
+    const b = document.getElementById('fb-'+f);
+    if(b) b.className = 'f-btn' + (f===_todoFilter?' on':'');
+  });
+  const c = document.getElementById('t-count');
+  if(c) c.textContent = `${_todos.filter(t=>!t.done).length} remaining`;
+}
 
-    <script src="script.js"></script>
+function addTodo() {
+  const inp = document.getElementById('t-inp');
+  const pri = document.getElementById('t-pri');
+  if (!inp?.value.trim()) return;
+  _todos.unshift({ id: Date.now()+'', text: inp.value.trim(), done: false, priority: pri?.value||'medium' });
+  inp.value = '';
+  saveTodos(); renderTodos();
+}
+function toggleTodo(id) {
+  const t = _todos.find(t=>t.id===id);
+  if(t){ t.done=!t.done; saveTodos(); renderTodos(); }
+}
+function delTodo(id) {
+  _todos = _todos.filter(t=>t.id!==id);
+  saveTodos(); renderTodos();
+}
+function setFilter(f) { _todoFilter=f; renderTodos(); }
+
+/* ═══════════════════════════════════════════════════════
+   NOTES APP
+═══════════════════════════════════════════════════════ */
+const SUBJECTS = [
+  { id:'physics',   name:'Physics',     color:'#00e6b4', emoji:'⚛️'  },
+  { id:'chemistry', name:'Chemistry',   color:'#aa44ff', emoji:'🧪'  },
+  { id:'math',      name:'Maths',       color:'#ffb627', emoji:'📐'  },
+  { id:'biology',   name:'Biology',     color:'#44ff88', emoji:'🧬'  },
+  { id:'english',   name:'English',     color:'#ff3dac', emoji:'📖'  },
+  { id:'cs',        name:'Comp. Sci.',  color:'#44aaff', emoji:'💻'  },
+  { id:'other',     name:'Other',       color:'#888899', emoji:'📌'  },
+];
+let _notes = JSON.parse(localStorage.getItem('ria_notes') || '[]');
+let _activeSub = 'physics';
+let _activeNote = null;
+
+function saveNotes() { localStorage.setItem('ria_notes', JSON.stringify(_notes)); }
+
+function htmlNotes() { return `
+<div class="notes-layout" style="height:100%;overflow:hidden">
+  <div class="notes-sidebar">
+    <div class="ns-head">
+      <div class="app-title" style="font-size:10px">SUBJECTS</div>
+      <div class="app-sub" style="margin-top:2px">12th Grade • Ria</div>
+    </div>
+    <div class="ns-list" id="subj-list"></div>
+  </div>
+  <div class="notes-mid">
+    <div class="nm-head">
+      <span class="nm-title" id="subj-lbl">Notes</span>
+      <button class="nm-new" onclick="newNote()">+ New</button>
+    </div>
+    <div class="nm-list" id="note-list-panel"></div>
+  </div>
+  <div class="notes-editor">
+    <div class="ne-toolbar">
+      <button class="ne-tb-btn ne-save" onclick="saveNote()">SAVE</button>
+      <button class="ne-tb-btn ne-del"  onclick="delNote()">DELETE</button>
+    </div>
+    <input  class="note-title-inp" id="nt-title" placeholder="Note title..." oninput="noteChanged()" disabled>
+    <textarea class="note-body-inp" id="nt-body"  placeholder="Start writing your notes here..." oninput="noteChanged()" disabled></textarea>
+  </div>
+</div>`; }
+
+function renderSubjects() {
+  const el = document.getElementById('subj-list');
+  if (!el) return;
+  el.innerHTML = SUBJECTS.map(s => {
+    const cnt = _notes.filter(n=>n.subject===s.id).length;
+    return `<div class="subj-item ${s.id===_activeSub?'on':''}" onclick="selectSubj('${s.id}')">
+      <div class="s-dot" style="background:${s.color}"></div>
+      <span>${s.emoji} ${s.name}</span>
+      ${cnt>0?`<span class="badge" style="background:${s.color};min-width:16px">${cnt}</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderNotesList() {
+  const el = document.getElementById('note-list-panel');
+  const lbl = document.getElementById('subj-lbl');
+  if (!el) return;
+  const sub = SUBJECTS.find(s=>s.id===_activeSub);
+  if (lbl && sub) lbl.textContent = `${sub.emoji} ${sub.name}`;
+  const list = _notes.filter(n=>n.subject===_activeSub);
+  el.innerHTML = list.length ? list.map(n=>`
+    <div class="note-row ${_activeNote?.id===n.id?'on':''}" onclick="selectNote('${n.id}')">
+      <div class="nr-title">${escHtml(n.title||'Untitled')}</div>
+      <div class="nr-prev">${escHtml((n.body||'').substring(0,55))||'No content'}</div>
+    </div>`).join('')
+  : `<div class="empty-state" style="height:180px"><div class="empty-icon" style="font-size:36px">📝</div><div>No notes yet</div><div style="font-size:11px;margin-top:4px">Click + New to start</div></div>`;
+}
+
+function renderEditor() {
+  const ti = document.getElementById('nt-title');
+  const tb = document.getElementById('nt-body');
+  if (!ti||!tb) return;
+  if (_activeNote) {
+    ti.value = _activeNote.title||''; ti.disabled=false;
+    tb.value = _activeNote.body||'';  tb.disabled=false;
+  } else {
+    ti.value=''; ti.disabled=true;
+    tb.value=''; tb.disabled=true;
+    ti.placeholder='Select or create a note';
+  }
+}
+
+function selectSubj(id) {
+  _activeSub=id; _activeNote=null;
+  renderSubjects(); renderNotesList(); renderEditor();
+}
+function selectNote(id) {
+  _activeNote = _notes.find(n=>n.id===id)||null;
+  renderNotesList(); renderEditor();
+  setTimeout(()=>document.getElementById('nt-body')?.focus(),30);
+}
+function newNote() {
+  const n = { id:Date.now()+'', subject:_activeSub, title:'New Note', body:'', ts:Date.now() };
+  _notes.unshift(n); _activeNote=n;
+  saveNotes(); renderNotesList(); renderEditor();
+  setTimeout(()=>{ const t=document.getElementById('nt-title'); if(t){t.focus();t.select();} },40);
+}
+function saveNote() {
+  if(!_activeNote) return;
+  const ti=document.getElementById('nt-title');
+  const tb=document.getElementById('nt-body');
+  if(ti) _activeNote.title=ti.value;
+  if(tb) _activeNote.body=tb.value;
+  const idx=_notes.findIndex(n=>n.id===_activeNote.id);
+  if(idx!==-1) _notes[idx]=_activeNote;
+  saveNotes(); renderNotesList(); renderSubjects();
+  flashSave();
+}
+function delNote() {
+  if(!_activeNote) return;
+  _notes=_notes.filter(n=>n.id!==_activeNote.id);
+  _activeNote=null;
+  saveNotes(); renderSubjects(); renderNotesList(); renderEditor();
+}
+function noteChanged() {
+  if(!_activeNote) return;
+  const ti=document.getElementById('nt-title');
+  const tb=document.getElementById('nt-body');
+  if(ti) _activeNote.title=ti.value;
+  if(tb) _activeNote.body=tb.value;
+}
+function flashSave() {
+  const b = document.querySelector('.ne-save');
+  if(!b) return;
+  const orig=b.textContent; b.textContent='SAVED ✓';
+  b.style.color='var(--green)'; b.style.borderColor='var(--green)';
+  setTimeout(()=>{ b.textContent=orig; b.style.color=''; b.style.borderColor=''; },1200);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CALCULATOR
+═══════════════════════════════════════════════════════ */
+let _cExpr='', _cResult='0', _cJustEvaled=false, _cHist=[];
+
+function htmlCalc() {
+  const rows=[
+    ['C','%','+/-','÷'],
+    ['7','8','9','×'],
+    ['4','5','6','-'],
+    ['1','2','3','+'],
+    ['0','.','⌫','='],
+  ];
+  const btns = rows.flatMap(row=>row.map(b=>{
+    let cls='c-btn';
+    if(['+','-','×','÷','%','+/-'].includes(b)) cls+=' op';
+    if(b==='=') cls+=' eq';
+    if(b==='C') cls+=' cl';
+    if(b==='0') cls+=' zero';
+    return `<button class="${cls}" onclick="cPress('${b}')">${b}</button>`;
+  })).join('');
+  return `
+<div style="padding:10px 14px 4px;border-bottom:1px solid var(--border)">
+  <div class="app-title">CALCULATOR</div>
+</div>
+<div class="calc-wrap">
+  <div class="calc-display">
+    <div class="c-expr" id="c-expr">0</div>
+    <div class="c-res"  id="c-res">0</div>
+  </div>
+  <div class="c-hist" id="c-hist"></div>
+  <div class="calc-grid">${btns}</div>
+</div>`; }
+
+function cPress(v) {
+  const ops=['+','-','×','÷','.'];
+  if(_cJustEvaled && !ops.includes(v)) { _cExpr=''; _cResult='0'; _cJustEvaled=false; }
+  if(_cJustEvaled && ops.includes(v)) _cJustEvaled=false;
+
+  if(v==='C') { _cExpr=''; _cResult='0'; }
+  else if(v==='⌫') { _cExpr=_cExpr.slice(0,-1); }
+  else if(v==='=') {
+    try {
+      const raw=_cExpr.replace(/×/g,'*').replace(/÷/g,'/');
+      const r=Function('"use strict";return('+raw+')')();
+      const res=+r.toFixed(10)+'';
+      _cHist.unshift(`${_cExpr} = ${res}`);
+      if(_cHist.length>6) _cHist.pop();
+      _cResult=res; _cExpr=res; _cJustEvaled=true;
+    } catch { _cResult='Error'; }
+  } else if(v==='%') {
+    try { const r=Function('"use strict";return('+_cExpr.replace(/×/g,'*').replace(/÷/g,'/')+')')(); _cExpr=(r/100)+''; _cResult=_cExpr; } catch {}
+  } else if(v==='+/-') {
+    if(_cExpr){ try{ _cExpr=(-parseFloat(_cExpr))+''; _cResult=_cExpr; } catch{} }
+  } else { _cExpr+=v; }
+  updateDisplay();
+}
+
+function updateDisplay() {
+  const ex=document.getElementById('c-expr');
+  const rs=document.getElementById('c-res');
+  const ht=document.getElementById('c-hist');
+  if(ex) ex.textContent=_cExpr||'0';
+  if(rs) rs.textContent=_cResult;
+  if(ht) ht.innerHTML=_cHist.map(h=>`<div>${escHtml(h)}</div>`).join('');
+}
+
+document.addEventListener('keydown', e=>{
+  if(!WM['calc']||WM['calc'].minimized) return;
+  const map={'Enter':'=','Backspace':'⌫','Escape':'C'};
+  const k=map[e.key]||e.key;
+  if(['0','1','2','3','4','5','6','7','8','9','+','-','*','/','.','=','C','⌫'].includes(k)||k==='Escape') {
+    const mapped = e.key==='*'?'×':e.key==='/'?'÷':k;
+    cPress(mapped);
+    if(['0','1','2','3','4','5','6','7','8','9','+','-','*','/','=','.','Enter','Backspace','Escape'].includes(e.key)) e.preventDefault();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   SNAKE GAME
+═══════════════════════════════════════════════════════ */
+let _snakeTimer=null, _snake=[], _food={}, _dir='R', _ndir='R', _sScore=0, _sAlive=false;
+const SC=16, COLS=22, ROWS=18;
+
+function htmlSnake() { return `
+<div class="snake-wrap">
+  <div class="snake-header">
+    <div class="app-title" style="font-size:10px">SNAKE</div>
+    <div class="snake-score" id="snake-score">SCORE: 0</div>
+    <button class="n-btn" onclick="initSnake()" style="padding:5px 12px;font-size:9px">RESTART</button>
+  </div>
+  <canvas id="snakeCanvas" width="${COLS*SC}" height="${ROWS*SC}"></canvas>
+  <div class="g-ctrl">
+    <div></div>
+    <div class="ctrl" onclick="snakeDir('U')">▲</div>
+    <div></div>
+    <div class="ctrl" onclick="snakeDir('L')">◀</div>
+    <div class="ctrl" onclick="initSnake()">↺</div>
+    <div class="ctrl" onclick="snakeDir('R')">▶</div>
+    <div></div>
+    <div class="ctrl" onclick="snakeDir('D')">▼</div>
+    <div></div>
+  </div>
+  <div style="font-size:10.5px;color:var(--muted)">Arrow keys or WASD · Double-click desktop icon to open</div>
+</div>`; }
+
+function initSnake() {
+  if(_snakeTimer) clearInterval(_snakeTimer);
+  _snake=[{x:11,y:9},{x:10,y:9},{x:9,y:9},{x:8,y:9}];
+  _dir='R'; _ndir='R'; _sScore=0; _sAlive=true;
+  placeFood(); updSnakeScore();
+  _snakeTimer=setInterval(snakeTick, 115);
+  drawSnake();
+}
+
+const OPP={U:'D',D:'U',L:'R',R:'L'};
+function snakeDir(d) { if(d!==OPP[_dir]) _ndir=d; }
+
+document.addEventListener('keydown', e=>{
+  if(!WM['snake']||WM['snake'].minimized) return;
+  const k={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R'};
+  if(k[e.key]) { snakeDir(k[e.key]); e.preventDefault(); }
+});
+
+function placeFood() {
+  do { _food={x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)}; }
+  while(_snake.some(s=>s.x===_food.x&&s.y===_food.y));
+}
+
+function snakeTick() {
+  if(!_sAlive) return;
+  _dir=_ndir;
+  const h={x:_snake[0].x,y:_snake[0].y};
+  if(_dir==='R') h.x++; if(_dir==='L') h.x--;
+  if(_dir==='U') h.y--; if(_dir==='D') h.y++;
+  if(h.x<0||h.x>=COLS||h.y<0||h.y>=ROWS||_snake.some(s=>s.x===h.x&&s.y===h.y)) {
+    _sAlive=false; clearInterval(_snakeTimer); gameOver(); return;
+  }
+  _snake.unshift(h);
+  if(h.x===_food.x&&h.y===_food.y){ _sScore+=10; updSnakeScore(); placeFood(); } else _snake.pop();
+  drawSnake();
+}
+
+function drawSnake() {
+  const c=document.getElementById('snakeCanvas');
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#040407'; ctx.fillRect(0,0,c.width,c.height);
+  // grid
+  ctx.strokeStyle='rgba(0,230,180,.04)'; ctx.lineWidth=.5;
+  for(let x=0;x<c.width;x+=SC){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.height);ctx.stroke();}
+  for(let y=0;y<c.height;y+=SC){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.width,y);ctx.stroke();}
+  // food
+  ctx.shadowColor='#ff3dac'; ctx.shadowBlur=14;
+  ctx.fillStyle='#ff3dac';
+  ctx.beginPath(); ctx.roundRect(_food.x*SC+3,_food.y*SC+3,SC-6,SC-6,3); ctx.fill();
+  ctx.shadowBlur=0;
+  // snake
+  _snake.forEach((seg,i)=>{
+    const t=i/_snake.length;
+    const g=Math.floor(230-t*80); const b=Math.floor(180-t*100);
+    ctx.fillStyle=i===0?'#00e6b4':`rgba(0,${g},${b},${1-t*.35})`;
+    if(i===0){ctx.shadowColor='#00e6b4';ctx.shadowBlur=14;}
+    ctx.beginPath(); ctx.roundRect(seg.x*SC+1,seg.y*SC+1,SC-2,SC-2,i===0?4:2); ctx.fill();
+    ctx.shadowBlur=0;
+  });
+}
+
+function gameOver() {
+  const c=document.getElementById('snakeCanvas'); if(!c) return;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='rgba(0,0,0,.72)'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.textAlign='center';
+  ctx.font='bold 22px Orbitron,monospace'; ctx.fillStyle='#ff4444';
+  ctx.fillText('GAME OVER',c.width/2,c.height/2-14);
+  ctx.font='15px Orbitron,monospace'; ctx.fillStyle='#00e6b4';
+  ctx.fillText('Score: '+_sScore,c.width/2,c.height/2+14);
+  ctx.font='11px Rajdhani,sans-serif'; ctx.fillStyle='#6a6a88';
+  ctx.fillText('Press RESTART to play again',c.width/2,c.height/2+38);
+}
+
+function updSnakeScore() {
+  const el=document.getElementById('snake-score');
+  if(el) el.textContent='SCORE: '+_sScore;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CLOCK & CALENDAR
+═══════════════════════════════════════════════════════ */
+let _clockTimer=null;
+let _calDate=new Date();
+
+function htmlClock() { return `
+<div class="clock-wrap">
+  <div class="big-clock-box">
+    <div class="big-time" id="big-time">00:00:00</div>
+    <div class="big-date" id="big-date"></div>
+    <div class="big-day"  id="big-day"></div>
+  </div>
+  <div class="cal-box">
+    <div class="cal-nav-row">
+      <button class="cal-arr" onclick="navCal(-1)">‹</button>
+      <div class="cal-month-lbl" id="cal-month-lbl"></div>
+      <button class="cal-arr" onclick="navCal(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+  <div style="background:rgba(170,68,255,.07);border:1px solid rgba(170,68,255,.18);border-radius:8px;padding:10px 14px;font-size:11.5px;color:var(--text);line-height:1.6">
+    <span style="color:var(--purple);font-family:var(--font-display);font-size:9.5px;letter-spacing:1px">STUDY REMINDER</span><br>
+    Don't forget — Boards 2025! Keep grinding, Ria 🔥 Every hour of study today is a step toward your dream college.
+  </div>
+</div>`; }
+
+function updateClock() {
+  const n=new Date();
+  const hh=String(n.getHours()).padStart(2,'0');
+  const mm=String(n.getMinutes()).padStart(2,'0');
+  const ss=String(n.getSeconds()).padStart(2,'0');
+  const bt=document.getElementById('big-time');
+  const bd=document.getElementById('big-date');
+  const bdy=document.getElementById('big-day');
+  if(bt) bt.textContent=`${hh}:${mm}:${ss}`;
+  if(bd) bd.textContent=n.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  if(bdy) bdy.textContent=n.toLocaleDateString('en-US',{weekday:'long'}).toUpperCase();
+}
+
+function renderCal() {
+  const grid=document.getElementById('cal-grid');
+  const lbl=document.getElementById('cal-month-lbl');
+  if(!grid||!lbl) return;
+  const now=new Date();
+  const y=_calDate.getFullYear(), m=_calDate.getMonth();
+  lbl.textContent=_calDate.toLocaleString('en-US',{month:'long',year:'numeric'}).toUpperCase();
+  const first=new Date(y,m,1).getDay();
+  const days=new Date(y,m+1,0).getDate();
+  const prevDays=new Date(y,m,0).getDate();
+  const NAMES=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  let h=NAMES.map(d=>`<div class="cal-dn">${d}</div>`).join('');
+  for(let i=0;i<first;i++) h+=`<div class="cal-d other">${prevDays-first+i+1}</div>`;
+  for(let i=1;i<=days;i++){
+    const today=now.getDate()===i&&now.getMonth()===m&&now.getFullYear()===y;
+    h+=`<div class="cal-d ${today?'today':''}">${i}</div>`;
+  }
+  const rem=42-first-days;
+  for(let i=1;i<=rem;i++) h+=`<div class="cal-d other">${i}</div>`;
+  grid.innerHTML=h;
+}
+
+function navCal(d) { _calDate.setMonth(_calDate.getMonth()+d); renderCal(); }
+
+/* ═══════════════════════════════════════════════════════
+   WELCOME SCREEN
+═══════════════════════════════════════════════════════ */
+const TIPS=[
+  '⚛️ Physics: Review wave optics & ray diagrams before your exam!',
+  '🧪 Chemistry: Practice organic reaction mechanisms daily.',
+  '📐 Maths: Solve 3 integration problems — builds confidence fast.',
+  '🧬 Biology: Revise cell division diagrams — NCERT is your best friend.',
+  '📖 English: Read one editorial a day for comprehension practice.',
+  '💻 Comp. Sci: Revise sorting algorithms with time complexities.',
+  '🌟 Board tip: Focus on NCERT examples — they appear directly in exams!',
+  '⏰ Study in 45-min blocks with 10-min breaks — your brain loves this!',
+];
+
+function htmlWelcome() {
+  const tip=TIPS[Math.floor(Math.random()*TIPS.length)];
+  return `
+<div class="wel-wrap">
+  <div class="wel-avatar">👩‍🎓</div>
+  <div>
+    <div class="wel-name">Hello, Ria! ✨</div>
+    <div class="wel-sub">12th Grade Student • Board Exams 2025</div>
+  </div>
+  <div class="wel-tip">
+    <div class="wel-tip-label">✦ TODAY'S STUDY TIP ✦</div>
+    <div class="wel-tip-text">${tip}</div>
+  </div>
+  <div class="wel-btns">
+    <button class="n-btn" onclick="launchApp('todo')"  style="font-size:10px;padding:8px 14px">✅ Task List</button>
+    <button class="n-btn" onclick="launchApp('notes')" style="font-size:10px;padding:8px 14px;border-color:rgba(170,68,255,.4);color:var(--purple)">📓 Study Notes</button>
+    <button class="n-btn" onclick="launchApp('clock')" style="font-size:10px;padding:8px 14px;border-color:rgba(255,182,39,.4);color:var(--gold)">🕐 Calendar</button>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button class="n-btn" onclick="launchApp('calc')"  style="font-size:10px;padding:6px 12px;border-color:rgba(68,255,136,.3);color:var(--green)">🧮 Calc</button>
+    <button class="n-btn" onclick="launchApp('snake')" style="font-size:10px;padding:6px 12px;border-color:rgba(255,61,172,.3);color:var(--pink)">🐍 Snake</button>
+  </div>
+  <div style="font-size:10.5px;color:var(--muted);text-align:center">
+    Double-click desktop icons · ⚡ Start menu for all apps
+  </div>
+</div>`; }
+
+/* ═══════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOOT SEQUENCE
+═══════════════════════════════════════════════════════ */
+setupDesktop();
+setupStartMenu();
+tickSysClock();
+setInterval(tickSysClock, 60000);
+
+// Open welcome on load with a short delay for style
+setTimeout(() => launchApp('welcome'), 350);
+</script>
 </body>
 </html>
