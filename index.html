@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ff8ac2">
+    <meta name="application-name" content="RayOS">
+    <title>RayOS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <!-- Desktop container for the full RayOS web experience -->
+    <div id="desktop">
+        <header class="topbar">
+            <div class="brand">RayOS</div>
+            
+            <div id="clock" class="clock">Loading...</div>
+        </header>
+
+        <!-- App icons on the desktop - each button opens a separate window -->
+        <main class="desktop-grid">
+            <button class="app-card" id="wallpaper-changer">🎨 Wallpaper</button>
+        </main>
+
+        <!-- Dock at the bottom for quick access -->
+        <footer class="dock">
+            <button id="install-app" class="dock-item hidden">📌 Pin to taskbar</button>
+            <p id="install-message" class="install-message">Install RayOS to pin it to your taskbar.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+    <section class="app-window" id="snake-window" data-app-window="snake">
+        <header class="window-header">
+            <span>Snake Game</span>
+            <div class="window-controls">
+                <button class="minimize-window">_</button>
+                <button class="maximize-window">□</button>
+                <button class="close-window">×</button>
+            </div>
+        </header>
+        <div class="window-body snake-body">
+            <p class="window-help">Use arrow keys to move the snake. Press Start to play.</p>
+            <div class="tool-row">
+                <button id="start-snake">Start</button>
+                <button id="stop-snake">Stop</button>
+                <span class="score-label">Score: <span id="snake-score">0</span></span>
+            </div>
+            <canvas id="snake-canvas" width="360" height="360"></canvas>
+        </div>
+    </section>
+
+    <!-- Calculator window with number keys and operations -->
+    <section class="app-window" id="calc-window" data-app-window="calc">
+        <header class="window-header">
+            <span>Calculator</span>
+            <div class="window-controls">
+                <button class="minimize-window">_</button>
+                <button class="maximize-window">□</button>
+                <button class="close-window">×</button>
+            </div>
+        </header>
+        <div class="window-body calc-body">
+            <input id="calc-display" type="text" readonly value="0" />
+            <div class="calc-grid">
+                <button data-value="7">7</button>
+                <button data-value="8">8</button>
+                <button data-value="9">9</button>
+                <button data-value="/">÷</button>
+                <button data-value="4">4</button>
+                <button data-value="5">5</button>
+                <button data-value="6">6</button>
+                <button data-value="*">×</button>
+                <button data-value="1">1</button>
+                <button data-value="2">2</button>
+                <button data-value="3">3</button>
+                <button data-value="-">−</button>
+                <button data-value="0">0</button>
+                <button data-value=".">.</button>
+                <button data-value="=">=</button>
+                <button data-value="+">+</button>
+                <button class="wide-button" data-value="C">C</button>
+                <button class="wide-button" data-value="DEL">DEL</button>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>
